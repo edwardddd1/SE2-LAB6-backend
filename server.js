@@ -48,7 +48,11 @@ app.post('/moods', (req, res) => {
 });
 
 // CRITICAL: Use process.env.PORT for Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// ... (your existing routes and db connection above)
+
+// CRITICAL: Updated for Render Deployment
+const PORT = process.env.PORT || 3000; 
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server is actually running on port ${PORT}`);
 });
