@@ -7,52 +7,53 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Connection using Public Variables
-const db = mysql.createConnection({
+// 1. Connection Pool with the specific Railway proxy settings
+const db = mysql.createPool({
     host: process.env.MYSQLHOST,
     user: process.env.MYSQLUSER,
     password: process.env.MYSQLPASSWORD,
     database: process.env.MYSQLDATABASE,
-    port: process.env.MYSQLPORT || 3306
-});
-
-db.connect(err => {
-    if (err) {
-        console.error('❌ Database connection failed:', err.message);
-    } else {
-        console.log('✅ Connected to Railway MySQL');
+    port: process.env.MYSQLPORT,
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    connectTimeout: 20000,
+    ssl: {
+        rejectUnauthorized: false
     }
 });
 
-// 2. Simple Route to test the user
-app.get('/', (req, res) => {
-    res.send('Mood Tracker API is running!');
+// 2. Test the connection
+db.getConnection((err, connection) => {
+    if (err) {
+        console.error('❌ Database connection failed:', err.message);
+    } else {
+        console.log('✅ Connected to Railway MySQL (Gondola Proxy)');
+        connection.release();
+    }
 });
 
-// 3. Get Mood Logs
+// 3. Routes
+app.get('/', (req, res) => res.send('Mood Tracker API is running!'));
+
 app.get('/moods', (req, res) => {
     db.query('SELECT * FROM mood_logs ORDER BY logged_at DESC', (err, results) => {
-        if (err) return res.status(500).json(err);
+        if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
 });
 
-// 4. POST a new mood (Mood Check-in)
 app.post('/moods', (req, res) => {
     const { user_id, mood_label, mood_level, note } = req.body;
     const sql = 'INSERT INTO mood_logs (user_id, mood_label, mood_level, note) VALUES (?, ?, ?, ?)';
     db.query(sql, [user_id, mood_label, mood_level, note], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json({ message: 'Mood logged successfully!', id: result.insertId });
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Success!', id: result.insertId });
     });
 });
 
-// CRITICAL: Use process.env.PORT for Render
-// ... (your existing routes and db connection above)
-
-// CRITICAL: Updated for Render Deployment
-const PORT = process.env.PORT || 3000; 
-
+// 4. Render Port Logic
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server is actually running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
