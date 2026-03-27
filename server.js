@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+app.use(cors()); // This allows your GitHub site to talk to Render
 require('dotenv').config();
 
 const app = express();
@@ -53,7 +54,10 @@ app.post('/moods', (req, res) => {
 });
 
 // 4. Render Port Logic
-const PORT = process.env.PORT || 3000;
+// Change this line to ensure it doesn't default to the DB port
+// This MUST be the very last part of your file
+const PORT = process.env.PORT || 3000; // Let Render choose the port
+
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Server is LIVE on port ${PORT}`);
 });
